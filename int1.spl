@@ -1,0 +1,195 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+alias sysCallno S1;
+alias filename S2;
+alias ret S3;
+alias currentFat S4;
+ret=0;
+sysCallno = [physicalSP - 1]; 
+filename = [physicalSP - 3];
+
+if(sysCallno == 1) then                       //checking syscall is 1
+currentFat = FAT;
+
+while (1) do
+if(filename == [currentFat + 0]) then
+ret = 0;
+break;
+endif;
+if([currentFat + 2] == -1) then
+ret = 1; 
+break;
+endif; 
+if(currentFat == 3064) then
+ret = -1;
+break;
+endif;
+currentFat = currentFat + 8;
+endwhile;
+
+if(ret == 0 || ret == -1) then                 //check new fat entry is to be created
+[physicalSP - 2] = ret;
+
+else
+alias curFat S7;
+curFat = currentFat;
+
+while (1) do
+if(filename == [curFat + 0]) then
+ret = 0;
+break;
+endif; 
+if(curFat == 3064) then
+break;
+endif;
+curFat = curFat + 8;
+endwhile;
+
+if(ret == 0) then                               //if the file exists
+[physicalSP - 2] = ret;
+
+else
+ret =0;
+alias currentDisk S5;
+currentDisk = DISK_LIST + 24;
+
+while(1) do
+if([currentDisk] == 0) then
+ret = 0;
+break;
+endif;
+if(currentDisk - DISK_LIST == 447) then
+ret = -1;
+break;
+endif;
+currentDisk = currentDisk + 1;
+endwhile;
+
+if(ret == -1) then                     //check if space in disk list
+[physicalSP - 2] = ret;
+
+else
+[currentFat + 0] = filename;
+[currentFat + 1] = 0;
+[currentFat + 2] = currentDisk - DISK_LIST;
+load(1, currentDisk - DISK_LIST);
+alias i S6;
+i = 512;
+
+while(i < 1024) do
+[i] = -1;
+i = i+1;
+endwhile;
+
+store(1, currentDisk - DISK_LIST);
+[currentDisk] =1;
+store(5,19);
+store(6,20);
+[physicalSP - 2] = ret;
+
+endif;                                 //check if space in disk list
+
+endif;                                //if the file exists
+
+endif;                               //check new fat entry is to be created
+
+endif;                                   //checking syscall is 1
+
+if(sysCallno == 4) then              //check if syscall is 4
+currentFat = FAT;
+
+while (1) do
+if(filename == [currentFat + 0]) then
+ret = 0;
+break;
+endif;
+if(currentFat == 3064) then
+ret = -1;
+break;
+endif;
+currentFat = currentFat + 8;
+endwhile;
+
+if(ret == -1) then                   //check if file exists
+[physicalSP - 2] = ret;
+
+else
+alias ind S5;
+alias ftable S6;
+ind = (currentFat - FAT)/8;
+ftable = FILE_TABLE;
+
+while(1) do
+if([ftable + 0] == ind) then
+ret = -1;
+break;
+else
+if(ftable == 1470) then
+ret =0;
+break;
+endif;
+endif;
+ftable = ftable + 2;
+endwhile;
+
+
+if(ret == -1) then                  //check if file is open
+[physicalSP - 2] = ret;
+
+else
+alias basic S7;
+alias dat S8;
+basic = [currentFat + 2];
+load(1, basic);
+dat=512;
+
+while(1) do
+alias data S11;
+data= [dat];
+
+if(data == "" || data==-1 || dat == 768 || data == 0) then        //check if data blocks are over
+break;
+
+else
+alias j S9;
+j=512;
+
+while(j < 1024) do
+[j]="";
+j = j+1;
+endwhile;
+
+store(1,data);
+[DISK_LIST + data]=0;
+load(1,basic);
+
+endif;                              //check if data blocks are over 
+
+dat = dat +1;
+endwhile;
+
+load(1,basic);
+alias k S10;
+k=512;
+
+while(k < 1024) do
+[k]="";
+k=k+1;
+endwhile;
+
+store(1,basic);
+[DISK_LIST + basic]=0;
+[currentFat + 0] = -1;
+[currentFat + 1] = 0;
+[currentFat + 2] = -1;
+store(5,19);
+store(6,20);
+[physicalSP - 2] = 0;
+
+endif;                              //check if file is open 
+
+endif;                              //check if file exists
+
+endif;                              //check if syscall is 4
+
+ireturn;

@@ -1,0 +1,92 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+alias sysCallno S1;
+alias filedesc S2;
+alias ret S3;
+alias wordwrite S4;
+ret=0;
+sysCallno = [physicalSP - 1]; 
+filedesc = [physicalSP - 4];
+wordwrite = [physicalSP -3];
+
+if(sysCallno == 5) then                            // checking write syscall
+
+if(filedesc <0 || filedesc >7) then                // checking validity of index
+[physicalSP - 2] = -1;
+
+else
+alias currentPID S5;
+alias currentPCB S6;
+currentPID = (PTBR - 1024)/8;
+currentPCB = READY_LIST + currentPID * 32;
+
+if([currentPCB + 15 + filedesc*2 + 0] == -1) then      //checking the descriptor is open/close
+[physicalSP - 2] = -1;
+
+else
+alias fileindex S7;
+alias lseek S8;
+alias fatind S9;
+alias basic S10;
+fileindex = [currentPCB + 15 + filedesc*2 +0];
+lseek = [currentPCB + 15 + filedesc*2 +1];
+fatind = [FILE_TABLE + 2*fileindex + 0];
+basic = [FAT + fatind*8 + 2];
+load(1, basic); 
+alias seek S11;
+alias data S12;
+alias currentDisk S13;
+seek = lseek/512;
+data = [512 + seek];
+
+if(data == -1) then                              //check if data block is present
+
+currentDisk = DISK_LIST + 24;
+
+while(1) do
+
+if(currentDisk - DISK_LIST == 448) then
+ret = -1;
+break;
+endif;
+
+if([currentDisk] == 0) then
+ret=0;
+break;
+endif;
+
+currentDisk = currentDisk + 1;
+endwhile;
+
+endif;                                            //check if data block is present
+
+if(ret == -1) then                               //check space for data block
+[physicalSP -2] =ret;
+
+else
+
+if(data == -1) then                              //check if new block is allocated
+data = currentDisk - DISK_LIST;
+[currentDisk] = 1;
+[512 + seek] = data;
+[FAT + fatind*8 + 1] = [FAT + fatind*8 + 1] + 512;
+store(1, basic);
+store(5,19);
+store(6,20);
+
+endif;                                           //check if new block is allocated
+
+load(1, data);
+[512 + lseek % 512] = wordwrite;
+store(1, data);
+[currentPCB + 15 + filedesc*2 +1] = [currentPCB + 15 + filedesc*2 +1] + 1;
+[physicalSP - 2] = 0;
+
+endif;                                           //check space for data block
+
+endif;                                                //checking the descriptor is open/close
+
+endif;                                             // checking validity of index
+
+endif;                                             // checking write syscall
+ireturn;
