@@ -1,0 +1,98 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+alias sysCallno S1;
+alias filedesc S2;
+alias ret S3;
+alias wordread S4;
+alias newlseek S5;
+ret=0;
+sysCallno = [physicalSP - 1]; 
+filedesc = [physicalSP - 4];
+
+if(sysCallno == 6) then                            // checking lseek syscall
+
+newlseek = [physicalSP -3];
+
+if(filedesc <0 || filedesc >7) then                // checking validity of index
+[physicalSP - 2] = -1;
+
+else
+alias currentPID S6;
+alias currentPCB S7;
+currentPID = (PTBR - 1024)/8;
+currentPCB = READY_LIST + currentPID * 32;
+
+if([currentPCB + 15 + filedesc*2 + 0] == -1) then      //checking the descriptor is open/close
+[physicalSP - 2] = -1;
+
+else
+alias fileindex S8;
+alias fatind S9;
+alias filesize S10;
+fileindex = [currentPCB + 15 + filedesc*2 +0];
+fatind = [FILE_TABLE + 2*fileindex + 0];
+filesize = [FAT + fatind*8 + 1];
+
+if(newlseek >=0 && newlseek <= filesize) then          //checking validity of lseek
+[currentPCB + 15 + filedesc*2 + 1] = newlseek;
+[physicalSP - 2] = 0;
+
+else
+[physicalSP - 2] = -1;
+
+endif;                                                //checking validity of lseek
+
+endif;                                                //checking the descriptor is open/close
+
+endif;                                             // checking validity of index
+
+endif;                                             // checking lseek syscall
+
+if(sysCallno == 7) then                            // checking read syscall
+
+if(filedesc <0 || filedesc >7) then                // checking validity of index
+[physicalSP - 2] = -1;
+
+else
+alias currentPID S6;
+alias currentPCB S7;
+currentPID = (PTBR - 1024)/8;
+currentPCB = READY_LIST + currentPID * 32;
+
+if([currentPCB + 15 + filedesc*2 + 0] == -1) then      //checking the descriptor is open/close
+[physicalSP - 2] = -1;
+
+else
+alias fileindex S8;
+alias lseek S9;
+alias fatind S10;
+alias basic S11;
+fileindex = [currentPCB + 15 + filedesc*2 +0];
+lseek = [currentPCB + 15 + filedesc*2 +1];
+fatind = [FILE_TABLE + 2*fileindex + 0];
+basic = [FAT + fatind*8 + 2];
+load(1, basic); 
+
+if(lseek == [FAT + fatind*8 + 1]) then           // check if lseek is at end of file
+[physicalSP - 2] =-1;
+
+else
+alias seek S12;
+alias data S13;
+seek = lseek/512;
+data = [512 + seek];
+load(1, data);
+wordread = [512 + lseek % 512];
+[currentPCB + 15 + filedesc*2 +1] = lseek + 1;
+[physicalSP - 2] = 0;
+[physicalSP - 3] = wordread;
+
+endif;                                           // check if lseek is at end of file
+
+endif;                                           //checking the descriptor is open/close
+
+endif;                                           // checking validity of index
+
+endif;                                           // checking read syscall
+
+ireturn;
