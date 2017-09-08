@@ -65,7 +65,7 @@ i=i+1;
 endwhile;
 
 if( j < count) then                   // check if space left
-[physicalSP - 2] =ret;
+[physicalSP - 2] =-1;
 
 else
 i = 29;
@@ -81,7 +81,6 @@ while(1) do
 while(k < 8) do
 
 if( [PTBR + k] != -1) then
-
 break;
 endif;
 
@@ -149,12 +148,12 @@ endwhile;
 
 i=15;
 
-while(i < 32) do
+while(i < 31) do
 [READY_LIST + 32*indPCB +i] = [READY_LIST + 32*PID +i];
 [READY_LIST + 32*indPCB +i + 1] = [READY_LIST + 32*PID +i + 1];
 alias proind S10;
 alias filecount S11;
-proind = [READY_LIST + 32*PID +i + 1];
+proind = [READY_LIST + 32*PID +i];
 filecount = FILE_TABLE + 2*proind + 1;
 [filecount] = [filecount] + 1;
 i=i+2;
