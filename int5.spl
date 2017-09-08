@@ -1,0 +1,175 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+alias sysCallno S1;
+alias ret S2;
+ret=0;
+sysCallno = [physicalSP - 1]; 
+
+if(sysCallno == 8) then                       //checking syscall is 8
+
+alias indPCB S3;
+indPCB = 0;
+
+while(1) do
+
+if([READY_LIST + 32*indPCB + 1]==0) then     //check if PCB is free
+break;
+endif;                                       //check if PCB is free
+
+indPCB = indPCB +1;
+
+if(indPCB == 32) then                     //check if final PCB
+ret = -1;
+break; 
+endif;                                       //check if final PCB
+
+endwhile;
+
+if(ret == -1) then                           //check if space in ready list
+[physicalSP - 2] =ret;
+
+else
+
+alias i S4;
+alias count S5;
+
+i=0;
+count=0;
+
+while(i<8) do
+
+if([PTBR + i] != -1) then              // check if page table entry is filled
+count = count + 1;
+endif;                                 // check if page table entry is filled
+
+i=i+2;
+
+endwhile;
+
+alias j S6;
+
+j=0;
+i=MEM_LIST + 29;
+
+while(i < 1344) do
+
+if( [i] == 0) then                    // check for free memory
+j=j+1;
+endif;                                // check for free memory
+
+if(j >= count) then                   // check if enough space
+break;
+endif;                                // check if enough space
+
+i=i+1;
+endwhile;
+
+if( j < count) then                   // check if space left
+[physicalSP - 2] =-1;
+
+else
+i = 29;
+alias k S7;
+k=0;
+alias currPTBR S8;
+currPTBR = 1024 + indPCB * 8;
+alias ind S9;
+ind=0;
+
+while(1) do
+
+while(k < 8) do
+
+if( [PTBR + k] != -1) then
+break;
+endif;
+
+k=k+2;
+endwhile;
+
+if(k == 8) then
+break;
+endif;
+
+if([MEM_LIST + i] == 0] then          // check if page is free
+[MEM_LIST + i] = 1;
+
+if(k==6) then                         //check if entry for stack
+
+[currPTBR + 6] = [PTBR + 6];
+[currPTBR + 7] = "01"; 
+
+else
+
+[currPTBR + k] = [PTBR + k];
+[currPTBR + k + 1] = "01";
+endif;                                //check if entry for stack
+
+j=0;
+
+while(j < 512) do
+
+[i*512+j] = [[PTBR+k]*512 + j];
+
+j=j+1;
+endwhile;
+
+endif;                                // check if page is free
+
+i=i+1;
+k=k+2;
+endwhile;
+
+ind = 0;
+
+while(ind < 8) do
+
+if([PTBR + ind] == -1) then
+[currPTBR + ind] = -1;
+[currPTBR + ind + 1] ="00";
+endif;
+
+ind = ind +2;
+endwhile;
+
+[READY_LIST + 32*indPCB + 5] = currPTBR;
+[READY_LIST + 32*indPCB + 4] = [physicalSP];
+[READY_LIST + 32*indPCB + 3] = SP - 1;
+[READY_LIST + 32*indPCB + 2] = BP;
+[READY_LIST + 32*indPCB + 6] = PTLR;
+[READY_LIST + 32*indPCB + 7] = R0;
+[READY_LIST + 32*indPCB + 8] = R1;
+[READY_LIST + 32*indPCB + 9] = R2;
+[READY_LIST + 32*indPCB + 10] = R3;
+[READY_LIST + 32*indPCB + 11] = R4;
+[READY_LIST + 32*indPCB + 12] = R5;
+[READY_LIST + 32*indPCB + 13] = R6;
+[READY_LIST + 32*indPCB + 14] = R7;
+
+i=15;
+
+while(i < 31) do
+[READY_LIST + 32*indPCB +i] = [READY_LIST + 32*PID +i];
+[READY_LIST + 32*indPCB +i + 1] = [READY_LIST + 32*PID +i + 1];
+alias proind S10;
+alias filecount S11;
+proind = [READY_LIST + 32*PID +i];
+filecount = FILE_TABLE + 2*proind + 1;
+[filecount] = [filecount] + 1;
+i=i+2;
+endwhile;
+
+[READY_LIST + 32*indPCB + 1] = 1;
+[READY_LIST + 32*indPCB]= indPCB;
+[physicalSP - 2] = indPCB;
+alias childphysicalSP S12;
+childphysicalSP = ([currPTBR + 2 * ((SP-1)/512)]* 512) + ((SP-1) % 512);
+[childphysicalSP - 1] = -2;
+
+endif;                                // check if space left
+
+endif;                                //check if space in ready list
+
+endif;                                //checking syscall is 8
+
+ireturn;

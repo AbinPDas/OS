@@ -1,7 +1,24 @@
+load(5,19);                       //load system routines,exhandler,dfl,fat block
+load(6,20);
 load(7,1);
 load(8,2);
+load(9,3);
+load(10,4);
+load(11,5);
+load(12,6);
+load(13,7);
+load(14,8);
+load(15,9);
+load(16,10);
+load(17,11);
+load(18,12);
+load(19,13);
+load(20,14);
+load(21,15);
+load(22,16);
 load(23,17);
 load(24,18);
+
 [READY_LIST + 0] = 0;
 load(25,21);
 load(26,22);
@@ -20,12 +37,8 @@ PTLR=4;
 breakpoint;
 SP=3*512;
 [28*512]=0;
-load(11,5);
-load(12,6);
-load(9,3);
-load(10,4);
-load(5,19);
-load(6,20);
+BP = SP;
+
 alias counter S0;
 counter = 0;
 while(counter < 128) do
@@ -33,18 +46,35 @@ while(counter < 128) do
 [FILE_TABLE + counter + 1] = 0;
 counter = counter + 2;
 endwhile;
+
 alias i S1;
 i = 0;
+
 while(i < 16) do
 [READY_LIST + i +15] = -1;
 i=i+1;
 endwhile;
-load(13,7);
-load(14,8);
-load(15,9);
-load(16,10);
-load(17,11);
-load(18,12);
+
+i=1280;
+
+while(i<1344) do
+
+if(i <= 1308) then        //check if page is reserved
+[i] = 1;
+else
+[i] = 0;
+endif;                    //check if page is reserved
+ 
+i=i+1;
+endwhile;
+
+i=1;
+
+while(i<32) do
+[READY_LIST + 32*i +1] = 0;
+i=i+1;
+endwhile;
+
 breakpoint;
 ireturn;
 
