@@ -1,3 +1,4 @@
+breakpoint;
 alias physicalSP S0;
 physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
 alias sysCallno S1;
@@ -91,19 +92,11 @@ if(k == 8) then
 break;
 endif;
 
-if([MEM_LIST + i] == 0] then          // check if page is free
+if([MEM_LIST + i] == 0) then          // check if page is free
 [MEM_LIST + i] = 1;
 
-if(k==6) then                         //check if entry for stack
-
-[currPTBR + 6] = [PTBR + 6];
-[currPTBR + 7] = "01"; 
-
-else
-
-[currPTBR + k] = [PTBR + k];
+[currPTBR + k] = i;
 [currPTBR + k + 1] = "01";
-endif;                                //check if entry for stack
 
 j=0;
 
@@ -148,21 +141,25 @@ endwhile;
 
 i=15;
 
+alias currPID S10;
+currPID = (PTBR - 1024)/8;
+
 while(i < 31) do
-[READY_LIST + 32*indPCB +i] = [READY_LIST + 32*PID +i];
-[READY_LIST + 32*indPCB +i + 1] = [READY_LIST + 32*PID +i + 1];
-alias proind S10;
-alias filecount S11;
-proind = [READY_LIST + 32*PID +i];
+[READY_LIST + 32*indPCB +i] = [READY_LIST + 32*currPID +i];
+[READY_LIST + 32*indPCB +i + 1] = [READY_LIST + 32*currPID +i + 1];
+alias proind S11;
+alias filecount S12;
+proind = [READY_LIST + 32*currPID +i];
 filecount = FILE_TABLE + 2*proind + 1;
 [filecount] = [filecount] + 1;
 i=i+2;
 endwhile;
 
 [READY_LIST + 32*indPCB + 1] = 1;
+breakpoint;
 [READY_LIST + 32*indPCB]= indPCB;
 [physicalSP - 2] = indPCB;
-alias childphysicalSP S12;
+alias childphysicalSP S13;
 childphysicalSP = ([currPTBR + 2 * ((SP-1)/512)]* 512) + ((SP-1) % 512);
 [childphysicalSP - 1] = -2;
 
