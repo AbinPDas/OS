@@ -37,7 +37,6 @@ PTLR=4;
 breakpoint;
 SP=3*512;
 [28*512]=0;
-BP = SP;
 
 alias counter S0;
 counter = 0;
