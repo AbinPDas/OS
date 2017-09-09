@@ -121,11 +121,11 @@ fileindex = [currentPCB + 15 + filename*2 +0];
 
 if([FILE_TABLE + 2*fileindex + 1] == 0)  then         // checking the open_count is 0
 [FILE_TABLE + 2*fileindex + 0] = -1;
+endif;                                            // checking the open_count is 0              
+
 [currentPCB + 15 + filename*2 + 0] = -1;
 [currentPCB + 15 + filename*2 + 1] = -1;
 [physicalSP - 2] = 0;
-
-endif;                                            // checking the open_count is 0              
 
 endif;                                             //checking the descriptor is open/close
 
