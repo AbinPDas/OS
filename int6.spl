@@ -1,0 +1,191 @@
+breakpoint;
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+alias sysCallno S1;
+alias filename S2;
+alias ret S3;
+alias currentFat S4;
+ret=0;
+[physicalSP - 2] = ret;
+sysCallno = [physicalSP - 1]; 
+filename = [physicalSP - 3];
+
+if(sysCallno == 9) then                       //checking syscall is 9
+
+currentFat = FAT;
+
+while(1) do 
+
+if(currentFat == 3072) then
+ret=-1;
+break;
+endif;
+
+if([currentFat + 0] == filename) then
+break;
+endif;
+
+currentFat = currentFat + 8;
+endwhile;
+
+if(ret == -1) then                           //check if filename is present
+[physicalSP - 2] = ret;
+
+else
+
+alias basic S5;
+basic = [currentFat + 2];
+load(1,basic);
+
+alias i S6;
+alias count S7;
+alias j S8;
+alias temp S13;
+i=512;
+count = 0; 
+
+while(1) do
+
+if([i] == -1 || [i] =="") then
+break;
+endif;
+
+count=count+1;
+i=i+1;
+endwhile;
+
+temp = count;
+i = 0;
+
+while(i < 6) do
+
+if([PTBR + i] != -1) then
+temp =temp-1;
+endif;
+
+i=i+2;
+endwhile;
+
+j=temp;
+
+if(temp > 0) then                       // check the difference between number of new-old blocks
+
+i = 29;
+
+while(1) do
+
+if([MEM_LIST + i] == 0) then
+j = j - 1;
+endif;
+
+if(j == 0) then
+break;
+endif;
+
+if(i == 63) then
+ret = -1;
+break;
+endif;
+
+i=i+1;
+endwhile;
+
+endif;                                   // check the difference between number of new-old blocks
+
+if(ret == -1) then                       // check if enough space for new file
+[physicalSP - 2] =ret;
+
+else
+
+i=0;
+alias k S9;
+k = 512;
+
+while(i < 6) do
+
+if([PTBR + i] == -1) then               // check if page entry is invalid
+j=29;
+
+while(1) do
+
+if([MEM_LIST + j] == 0) then
+[PTBR + i] =j;
+[PTBR + i + 1] = "01";
+[MEM_LIST + j] = 1;
+endif;
+
+j=j+1;
+endwhile;
+
+endif;                                  // check if page entry is invalid
+
+j = [PTBR + i];
+
+load(j,[k]);
+
+k=k+1;
+count = count-1;
+i= i + 2;
+
+if(count == 0) then                   // check if all pages are allotted
+
+while(i < 6) do
+
+if([PTBR + i] != -1) then             // check if page entry is filled
+
+[MEM_LIST + [PTBR + i]] = 0;
+[PTBR + i] = -1;
+[PTBR + i + 1] = "00";
+
+endif;                                // check if page entry is filled
+
+i=i+2;
+endwhile;
+
+break;
+
+endif;                                // check if all pages are allotted
+
+endwhile;
+
+alias curPID S10;
+alias curPCB S11;
+
+curPID = (PTBR - 1024)/8;
+curPCB = READY_LIST + 32*curPID;
+i=0;
+
+while(i<8) do
+
+alias fileindex S12;
+fileindex = [curPCB + 15 + 2*i];
+
+if(fileindex != -1) then                                //check if file present
+
+[FILE_TABLE + 2*fileindex + 1] = [FILE_TABLE + 2*fileindex + 1] - 1;
+
+if([FILE_TABLE + 2*fileindex + 1] == 0)  then         // checking the open_count is 0
+
+[FILE_TABLE + 2*fileindex + 0] = -1;
+
+endif;                                            // checking the open_count is 0  
+
+[curPCB + 15 + i*2 + 0] = -1;
+[curPCB + 15 + i*2 + 1] = -1;
+
+endif;                                           //check if file present
+
+i=i+1;
+endwhile;
+
+SP = 3*512;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+[physicalSP] = 0;
+
+endif;                                   // check if enough space for new file
+
+endif;                                       //check if filename is present
+
+endif;                                        //checking syscall is 9
+
+ireturn;
