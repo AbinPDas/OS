@@ -108,7 +108,7 @@ j=j+1;
 
 endwhile;
 
-if(j==512) then 
+if(j==512) then                               // check if no space in swap
 
 alias curPID S10;
 alias curPCB S11;
@@ -146,7 +146,7 @@ k=k+1;
 endwhile;
 
 
-endif;
+endif;                                               // check if no space in swap
 
 break;
 

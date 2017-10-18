@@ -39,9 +39,6 @@ i=0;
 
 while(i<6) do
 
-[currPTBR + i] = [PTBR + i];
-[currPTBR + i + 1] = [PTBR + i + 1];
-
 if([PTBR + i + 1] == "01" || [PTBR + i + 1] == "11") then          //check if the page is valid
 
 alias mempage S6;
