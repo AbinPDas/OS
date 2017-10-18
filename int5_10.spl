@@ -69,8 +69,8 @@ endwhile;
 alias currPTBR S7;
 
 currPTBR = 1024 + indPCB*8 ;
-[currPTBR + 7] = stpage;
-[currPTBR + 8] = "01";
+[currPTBR + 6] = stpage;
+[currPTBR + 7] = "01";
 
 i=0;
 

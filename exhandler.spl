@@ -1,3 +1,4 @@
+breakpoint;
 alias cause S1;
 alias VPagenum S2;
 alias IP_addr S3;
@@ -6,7 +7,6 @@ alias exc S4;
 cause = EFR%10;
 VPagenum = ( (EFR/10) %100);
 IP_addr = (EFR/1000) ;
-
 if(cause == 1) then                   //checking which exception
 
 exc = "Illegal Instruction";
@@ -209,6 +209,7 @@ SP = SP + 1;
 alias physicalSP S14;
 physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
 
-[physicalSP]=IP_addr;
+[physicalSP] = IP_addr;
+breakpoint;
 
 ireturn;

@@ -68,7 +68,7 @@ endwhile;
 
 i= 512;
 
-load(1,[currentFat + 2];
+load(1,[currentFat + 2]);
 
 while (1) do
 
