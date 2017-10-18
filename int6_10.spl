@@ -131,4 +131,23 @@ endif;                                       //check if filename is present
 
 endif;                                        //checking syscall is 9
 
+if(sysCallno == 11) then                       //checking syscall is 11
+
+ret = (PTBR - 1024)/8;
+[physicalSP - 2] = ret;
+
+endif;                                         //checking syscall is 11
+
+if(sysCallno == 12) then                       //checking syscall is 12
+
+alias curPID S5;
+alias curPCB S6;
+
+curPID = (PTBR - 1024)/8;
+curPCB = READY_LIST + 32*curPID;
+
+[physicalSP - 2] = [curPCB +31];
+
+endif;                                         //checking syscall is 12
+
 ireturn;
