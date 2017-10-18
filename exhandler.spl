@@ -1,0 +1,152 @@
+alias cause S1;
+alias VPagenum S2;
+alias IP_addr S3;
+alias exc S4;
+
+cause = EFR%10;
+VPagenum = ( (EFR/10) %100);
+IP_addr = (EFR/1000) ;
+
+if(cause == 1) then                   //checking which exception
+
+exc = "Illegal Instruction";
+print exc;
+inline "JMP 11776";
+
+else
+
+if(cause == 2) then                   //checking exception 2
+
+exc = "Illegal Memory access";
+print exc;
+inline "JMP 11776";
+
+else
+
+if(cause == 3) then                   //checking exception 3
+
+exc = "Arithmetic exception";
+print exc;
+inline "JMP 11776";
+
+else
+
+if(cause == 4) then                   //checking exception 4
+
+exc = "Illegal operands";
+print exc;
+inline "JMP 11776";
+
+else
+
+alias phy_page S5;
+
+phy_page = [PTBR + 2 * (VPagenum/512)];
+
+if(phy_page == -1) then               //check if page num is invalid
+
+inline "JMP 11776";
+
+else
+
+alias i S6;
+alias newpage S7;
+
+i = MEM_LIST + 25;
+
+while(1) do
+
+if(i==1344) then
+break;
+endif;
+
+if([i] == 0) then
+
+[i] = 1;
+newpage = i-MEM_LIST;
+
+break;
+
+endif;
+
+i=i+1;
+
+endwhile;
+
+if(i == 1344) then                    // check if no page is found
+
+alias newPTBR S8;
+
+newPTBR = PTBR;
+
+while(1) do
+
+if([newPTBR +1] == "01") then                //check if valid with reference bit is 0
+
+if( ((newPTBR + 2)% 8 !=0 ) && ([MEM_LIST +[newPTBR]] == 1) ) then  //check if not stack and shared
+
+newpage = [newPTBR];
+
+alias j S9;
+
+j=448;
+
+while(j < 512) do
+
+if([DISK_LIST + j] == 0) then
+
+[DISK_LIST + j] =1;
+
+store(newpage,j);
+store(6,20);
+[newPTBR] = j;
+[newPTBR + 1]= "00";
+
+endif;
+
+j=j+1;
+
+endwhile;
+
+if(j==512) then 
+endif;
+
+
+break;
+
+endif;                                                              //check if not stack and shared
+
+endif;                                       //check if valid with reference bit is 0
+
+if([newPTBR + 1] == "10") then
+
+[newPTBR + 1] = "00";
+
+endif;
+
+if([newPTBR + 1] == "11") then
+
+[newPTBR + 1] = "01";
+
+endif;
+
+newPTBR = newPTBR + 2;
+
+if(newPTBR == 1280) then
+newPTBR =1024;
+endif;
+
+endwhile;
+
+endif;                                // check if no page is found
+
+endif;                                //check if page num is invalid
+
+
+endif;                                //checking exception 4
+
+endif;                                //checking exception 3 
+
+endif;                                //checking exception 2
+
+endif;                                //checking which exception

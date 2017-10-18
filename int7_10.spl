@@ -1,0 +1,123 @@
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+alias sysCallno S1;
+sysCallno = [physicalSP - 1]; 
+alias ret S2;
+ret=-1;
+[physicalSP - 2] = -1;
+
+if(sysCallno == 10) then                       //checking syscall is 10
+
+alias curPID S3;
+alias newPCB S4;
+alias curPCB S5;
+
+curPID = (PTBR - 1024)/8;
+curPCB = READY_LIST + 32*curPID;
+newPCB = curPCB + 32;
+
+while(1) do
+
+if(newPCB == 2560) then
+newPCB = READY_LIST;
+endif;
+
+if(newPCB == curPCB) then
+halt;
+endif;
+
+if([newPCB + 1] ==1) then
+break;
+endif;
+
+newPCB = newPCB + 32;
+
+endwhile;
+
+[curPCB + 1] = 0;
+
+alias i S6;
+i=0;
+
+while(i<8) do
+
+alias fileindex S7;
+fileindex = [curPCB + 15 + 2*i];
+
+if(fileindex!=-1) then                                //check if file present
+
+[FILE_TABLE + 2*fileindex + 1] = [FILE_TABLE + 2*fileindex + 1] - 1;
+
+if([FILE_TABLE + 2*fileindex + 1] == 0)  then         // checking the open_count is 0
+
+[FILE_TABLE + 2*fileindex + 0] = -1;
+
+endif;                                            // checking the open_count is 0  
+
+[curPCB + 15 + i*2 + 0] = -1;
+[curPCB + 15 + i*2 + 1] = -1;
+
+endif;                                           //check if file present
+
+i=i+1;
+endwhile;
+
+[curPCB + 1] = 0;
+
+i=0;
+
+while(i<8) do
+
+if([PTBR + i] != -1) then                       //check for page entry
+
+alias mempage S8;
+
+mempage = [PTBR + i];
+
+if([PTBR + i + 1] == "01" || [PTBR + i + 1] == "11") then    //check if the page is valid
+
+[MEM_LIST +mempage] = [MEM_LIST +mempage] - 1;
+
+else
+
+if([PTBR + i] >=448) then                           //check if in swap area
+
+[DISK_LIST + mempage] = [DISK_LIST + mempage] - 1;
+
+store(6, 20);
+
+endif;                                              //check if in swap area
+
+endif;                                                      //check if the page is valid
+
+[PTBR + i] = -1;
+[PTBR + i + 1] ="00";
+ 
+endif;                                         //check for page entry
+
+i=i+2;
+endwhile;
+ 
+BP = [newPCB + 2];
+SP = [newPCB + 3];
+PTBR = [newPCB + 5];
+PTLR = [newPCB + 6];
+R0 = [newPCB + 7];
+R1 = [newPCB + 8];
+R2 = [newPCB + 9];
+R3 = [newPCB + 10];
+R4 = [newPCB + 11];
+R5 = [newPCB + 12];
+R6 = [newPCB + 13];
+R7 = [newPCB + 14];
+
+alias newphysicalSP S9;
+SP=SP+1;
+newphysicalSP = (512 *[PTBR + 2* (SP/512)]) + SP%512;
+ 
+[newphysicalSP] = [newPCB + 4];
+[newPCB + 1] = 2;
+
+endif;                                         //checking syscall is 10
+
+ireturn;
