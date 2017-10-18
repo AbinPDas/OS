@@ -41,7 +41,7 @@ else
 
 alias phy_page S5;
 
-phy_page = [PTBR + 2 * (VPagenum/512)];
+phy_page = [PTBR + 2 *VPagenum];
 
 if(phy_page == -1) then               //check if page num is invalid
 
@@ -109,8 +109,44 @@ j=j+1;
 endwhile;
 
 if(j==512) then 
-endif;
 
+alias curPID S10;
+alias curPCB S11;
+
+curPID = (newPTBR -1024)/8;
+
+curPCB = READY_LIST + 32*curPID;
+
+[curPCB + 1] = 0;
+
+alias k S12;
+k=0;
+
+while(k<8) do
+
+alias fileindex S13;
+fileindex = [curPCB + 15 + 2*k];
+
+if(fileindex!=-1) then                                //check if file present
+
+[FILE_TABLE + 2*fileindex + 1] = [FILE_TABLE + 2*fileindex + 1] - 1;
+
+if([FILE_TABLE + 2*fileindex + 1] == 0)  then         // checking the open_count is 0
+
+[FILE_TABLE + 2*fileindex + 0] = -1;
+
+endif;                                            // checking the open_count is 0  
+
+[curPCB + 15 + k*2 + 0] = -1;
+[curPCB + 15 + k*2 + 1] = -1;
+
+endif;                                           //check if file present
+
+k=k+1;
+endwhile;
+
+
+endif;
 
 break;
 
@@ -140,8 +176,25 @@ endwhile;
 
 endif;                                // check if no page is found
 
-endif;                                //check if page num is invalid
+if(phy_page > 20 && phy_page < 448) then          //check if page is in disk
 
+load(newpage,phy_page);
+
+endif;                                            //check if page is in disk
+
+if(phy_page >= 448) then          //check if page is in swap
+
+load(newpage,phy_page);
+
+[DISK_LIST + phy_page] = [DISK_LIST + phy_page] - 1;
+store(6,20);
+
+endif;                            //check if page is in swap
+
+[PTBR + VPagenum*2] = newpage;
+[PTBR + VPagenum*2 +1] = "11";
+
+endif;                                //check if page num is invalid
 
 endif;                                //checking exception 4
 
@@ -150,3 +203,12 @@ endif;                                //checking exception 3
 endif;                                //checking exception 2
 
 endif;                                //checking which exception
+
+SP = SP + 1;
+
+alias physicalSP S14;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
+
+[physicalSP]=IP_addr;
+
+ireturn;
