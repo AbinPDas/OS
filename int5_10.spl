@@ -61,7 +61,7 @@ j=0;
 
 while(j<512) do
 
-[stpage*512 + j] = [ [PTBR + 7]*512 +j];
+[stpage*512 + j] = [ [PTBR + 6]*512 +j];
 j=j+1;
 
 endwhile;
