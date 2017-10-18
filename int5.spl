@@ -107,10 +107,12 @@ while(j < 512) do
 j=j+1;
 endwhile;
 
+k=k+2;
+
 endif;                                // check if page is free
 
 i=i+1;
-k=k+2;
+
 endwhile;
 
 ind = 0;

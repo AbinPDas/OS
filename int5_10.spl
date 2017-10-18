@@ -140,6 +140,7 @@ endwhile;
 breakpoint;
 [READY_LIST + 32*indPCB]= indPCB;
 [physicalSP - 2] = indPCB;
+[READY_LIST + 32*indPCB +31] = currPID;
 alias childphysicalSP S13;
 childphysicalSP = ([currPTBR + 2 * ((SP-1)/512)]* 512) + ((SP-1) % 512);
 [childphysicalSP - 1] = -2;
