@@ -35,10 +35,13 @@ alias i S4;
 i=MEM_LIST + 25;
 ret=-1;
 
+alias stpage S6;
+
 while(i<1344) do
 
 if([i]==0) then
 [i]=1;
+stpage = i - MEM_LIST;
 ret=0;
 break;
 
@@ -48,20 +51,110 @@ i=i+1;
 
 endwhile;
 
-if(ret==-1) then                           //check if space for stack
+if(i == 1344) then                    // check if no page is found
 
-[physicalSP - 2] =ret;
+alias newPTBR S8;
 
-else
+newPTBR = PTBR;
+
+while(1) do
+
+if(newPTBR == 1280) then
+newPTBR =1024;
+endif;
+
+if([newPTBR +1] == "01") then                //check if valid with reference bit is 0
+
+if( ((newPTBR + 2)% 8 !=0 ) && ([MEM_LIST +[newPTBR]] == 1) ) then  //check if not stack and shared
+
+stpage = [newPTBR];
+
+alias j S9;
+
+j=448;
+
+while(j < 512) do
+
+if([DISK_LIST + j] == 0) then
+
+[DISK_LIST + j] =1;
+
+store(stpage,j);
+store(6,20);
+[newPTBR] = j;
+[newPTBR + 1]= "00";
+break;
+endif;
+
+j=j+1;
+
+endwhile;
+
+if(j==512) then                               // check if no space in swap
+
+alias curPID S10;
+alias curPCB S11;
+
+curPID = (newPTBR -1024)/8;
+
+curPCB = READY_LIST + 32*curPID;
+
+[curPCB + 1] = 0;
+
+alias k S12;
+k=0;
+
+while(k<8) do
+
+alias fileindex S13;
+fileindex = [curPCB + 15 + 2*k];
+
+if(fileindex!=-1) then                                //check if file present
+
+[FILE_TABLE + 2*fileindex + 1] = [FILE_TABLE + 2*fileindex + 1] - 1;
+
+if([FILE_TABLE + 2*fileindex + 1] == 0)  then         // checking the open_count is 0
+
+[FILE_TABLE + 2*fileindex + 0] = -1;
+
+endif;                                            // checking the open_count is 0  
+
+[curPCB + 15 + k*2 + 0] = -1;
+[curPCB + 15 + k*2 + 1] = -1;
+
+endif;                                           //check if file present
+
+k=k+1;
+endwhile;
+
+
+endif;                                               // check if no space in swap
+
+break;
+
+endif;                                                              //check if not stack and shared
+
+endif;                                       //check if valid with reference bit is 0
+
+
+if([newPTBR + 1] == "11") then
+
+[newPTBR + 1] = "01";
+
+endif;
+
+newPTBR = newPTBR + 2;
+
+endwhile;
+
+endif;                                // check if no page is found
 
 alias j S5;
-alias stpage S6;
-stpage = i - MEM_LIST;
 j=0;
 
 while(j<512) do
 
-[stpage*512 + j] = [ [PTBR + 7]*512 +j];
+[stpage*512 + j] = [ [PTBR + 6]*512 +j];
 j=j+1;
 
 endwhile;
@@ -140,11 +233,10 @@ endwhile;
 breakpoint;
 [READY_LIST + 32*indPCB]= indPCB;
 [physicalSP - 2] = indPCB;
+[READY_LIST + 32*indPCB +31] = currPID;
 alias childphysicalSP S13;
 childphysicalSP = ([currPTBR + 2 * ((SP-1)/512)]* 512) + ((SP-1) % 512);
 [childphysicalSP - 1] = -2;
-
-endif;                                     //check if space for stack
 
 endif;                                //check if space in ready list
 

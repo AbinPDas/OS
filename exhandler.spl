@@ -3,6 +3,8 @@ alias cause S1;
 alias VPagenum S2;
 alias IP_addr S3;
 alias exc S4;
+alias physicalSP S14;
+physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
 
 cause = EFR%10;
 VPagenum = ( (EFR/10) %100);
@@ -11,6 +13,8 @@ if(cause == 1) then                   //checking which exception
 
 exc = "Illegal Instruction";
 print exc;
+SP = SP + 2;
+[physicalSP + 1] = 10;
 inline "JMP 11776";
 
 else
@@ -19,6 +23,8 @@ if(cause == 2) then                   //checking exception 2
 
 exc = "Illegal Memory access";
 print exc;
+SP = SP + 2;
+[physicalSP + 1] = 10;
 inline "JMP 11776";
 
 else
@@ -27,6 +33,8 @@ if(cause == 3) then                   //checking exception 3
 
 exc = "Arithmetic exception";
 print exc;
+SP = SP + 2;
+[physicalSP + 1] = 10;
 inline "JMP 11776";
 
 else
@@ -35,6 +43,8 @@ if(cause == 4) then                   //checking exception 4
 
 exc = "Illegal operands";
 print exc;
+SP = SP + 2;
+[physicalSP + 1] = 10;
 inline "JMP 11776";
 
 else
@@ -45,6 +55,8 @@ phy_page = [PTBR + 2 *VPagenum];
 
 if(phy_page == -1) then               //check if page num is invalid
 
+SP = SP + 2;
+[physicalSP + 1] = 10;
 inline "JMP 11776";
 
 else
@@ -77,15 +89,19 @@ if(i == 1344) then                    // check if no page is found
 
 alias newPTBR S8;
 
-newPTBR = PTBR;
+newPTBR = PTBR + 2*VPagenum + 2;
 
 while(1) do
+
+if(newPTBR == 1280) then
+newPTBR =1024;
+endif;
 
 if([newPTBR +1] == "01") then                //check if valid with reference bit is 0
 
 if( ((newPTBR + 2)% 8 !=0 ) && ([MEM_LIST +[newPTBR]] == 1) ) then  //check if not stack and shared
 
-newpage = [newPTBR];
+newpage = [newPTBR ];
 
 alias j S9;
 
@@ -101,7 +117,7 @@ store(newpage,j);
 store(6,20);
 [newPTBR] = j;
 [newPTBR + 1]= "00";
-
+break;
 endif;
 
 j=j+1;
@@ -154,11 +170,6 @@ endif;                                                              //check if n
 
 endif;                                       //check if valid with reference bit is 0
 
-if([newPTBR + 1] == "10") then
-
-[newPTBR + 1] = "00";
-
-endif;
 
 if([newPTBR + 1] == "11") then
 
@@ -167,10 +178,6 @@ if([newPTBR + 1] == "11") then
 endif;
 
 newPTBR = newPTBR + 2;
-
-if(newPTBR == 1280) then
-newPTBR =1024;
-endif;
 
 endwhile;
 
@@ -206,10 +213,7 @@ endif;                                //checking which exception
 
 SP = SP + 1;
 
-alias physicalSP S14;
-physicalSP = ([PTBR + 2 * (SP/512)]* 512) + (SP % 512);
-
-[physicalSP] = IP_addr;
+[physicalSP + 1] = IP_addr;
 breakpoint;
 
 ireturn;
