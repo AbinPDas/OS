@@ -89,15 +89,19 @@ if(i == 1344) then                    // check if no page is found
 
 alias newPTBR S8;
 
-newPTBR = PTBR;
+newPTBR = PTBR + 2*VPagenum + 2;
 
 while(1) do
+
+if(newPTBR == 1280) then
+newPTBR =1024;
+endif;
 
 if([newPTBR +1] == "01") then                //check if valid with reference bit is 0
 
 if( ((newPTBR + 2)% 8 !=0 ) && ([MEM_LIST +[newPTBR]] == 1) ) then  //check if not stack and shared
 
-newpage = [newPTBR];
+newpage = [newPTBR ];
 
 alias j S9;
 
@@ -113,7 +117,7 @@ store(newpage,j);
 store(6,20);
 [newPTBR] = j;
 [newPTBR + 1]= "00";
-
+break;
 endif;
 
 j=j+1;
@@ -166,11 +170,6 @@ endif;                                                              //check if n
 
 endif;                                       //check if valid with reference bit is 0
 
-if([newPTBR + 1] == "10") then
-
-[newPTBR + 1] = "00";
-
-endif;
 
 if([newPTBR + 1] == "11") then
 
@@ -179,10 +178,6 @@ if([newPTBR + 1] == "11") then
 endif;
 
 newPTBR = newPTBR + 2;
-
-if(newPTBR == 1280) then
-newPTBR =1024;
-endif;
 
 endwhile;
 
