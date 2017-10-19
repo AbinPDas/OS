@@ -131,11 +131,9 @@ R5 = [newPCB + 12];
 R6 = [newPCB + 13];
 R7 = [newPCB + 14];
 
-alias newphysicalSP S9;
 SP=SP+1;
-newphysicalSP = (512 *[PTBR + 2* (SP/512)]) + SP%512;
  
-[newphysicalSP] = [newPCB + 4];
+[physicalSP] = [newPCB + 4];
 [newPCB + 1] = 2;
 
 endif;                                         //checking syscall is 10
@@ -177,6 +175,20 @@ newPCB = newPCB + 32;
 
 endwhile;
 
+[curPCB + 2] = BP;
+[curPCB + 3] = SP-1;
+[curPCB + 4] = [physicalSP];
+[curPCB + 5] = PTBR;
+[curPCB + 6] = PTLR;
+[curPCB + 7] = R0;
+[curPCB + 8] = R1;
+[curPCB + 9] = R2;
+[curPCB + 10] = R3;
+[curPCB + 11] = R4;
+[curPCB + 12] = R5;
+[curPCB + 13] = R6;
+[curPCB + 14] = R7;
+
 BP = [newPCB + 2];
 SP = [newPCB + 3];
 PTBR = [newPCB + 5];
@@ -189,6 +201,8 @@ R4 = [newPCB + 11];
 R5 = [newPCB + 12];
 R6 = [newPCB + 13];
 R7 = [newPCB + 14];
+
+[physicalSP -2] =0;
 
 alias newphysicalSP S8;
 SP=SP+1;
@@ -205,21 +219,21 @@ if(sysCallno == 14) then                       //checking syscall is 14
 
 while(1) do
 
-if([newPCB + 1] == 100 + curPID) then          // check for processes waiting
-
 if(newPCB == 2560) then
 newPCB = READY_LIST;
 endif;
+
+if([newPCB + 1] == (100 + curPID) )  then          // check for processes waiting
 
 [newPCB + 1] = 1;
 
 endif;                                         // check for processes waiting
 
-newPCB = newPCB + 32;
-
 if(newPCB == curPCB) then
 break;
 endif;
+
+newPCB = newPCB + 32;
 
 endwhile;
 
